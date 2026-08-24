@@ -5,6 +5,11 @@
 #include "window.h"
 #include "ui/ui.h"
 
+
+/*
+ *  Manages application state and coordinates sub-systems
+ */
+
 class Application {
 public:
     Application() = default;

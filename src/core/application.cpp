@@ -5,6 +5,8 @@
 #include <imgui_impl_opengl3.h>
 #include <curl/curl.h>
 
+#include <netinet/in.h>
+
 Application::~Application() {
     curl_global_cleanup();
     ImGui_ImplOpenGL3_Shutdown();
@@ -51,9 +53,21 @@ void Application::loop() {
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
 
+        
+
         //Draw UI
-        //m_ui.draw(view_model);
-        m_ui.draw();
+        static ChatUiState state;
+        m_ui.draw(
+            state,
+            {},
+            {},
+            {},
+            [](std::string text) {
+                // Enqueue the command for the IRC/network thread.
+                // Do not block the rendering thread here.
+                //send_queue.push(std::move(text));
+            }
+        );
 
         ImGui::Render();
         glViewport(0, 0, static_cast<int>(io.DisplaySize.x), static_cast<int>(io.DisplaySize.y));
