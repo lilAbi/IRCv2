@@ -29,8 +29,8 @@ void Logger::init_loggers() {
     thread_console_sink->set_level(spdlog::level::trace);
     thread_console_sink->set_pattern("\x1b[38;5;55m[%Y-%m-%d %H:%M:%S.%e] [%n] [thread %t]\x1b[0m  %^[%l] %v%$");
 
-    m_default_logger            = std::make_unique<spdlog::logger>( "Main", spdlog::sinks_init_list{default_console_sink} );
-    m_thread_logger    = std::make_shared<spdlog::logger>( "Thread", spdlog::sinks_init_list{thread_console_sink} );
+    m_default_logger   = std::make_unique<spdlog::logger>( "Main", spdlog::sinks_init_list{default_console_sink} );
+    m_thread_logger    = std::make_shared<spdlog::logger>( "Network", spdlog::sinks_init_list{thread_console_sink} );
 
     m_default_logger->set_level(spdlog::level::trace);
     m_default_logger->flush_on(spdlog::level::err);
