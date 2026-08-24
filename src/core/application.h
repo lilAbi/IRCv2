@@ -1,10 +1,8 @@
 #pragma once
 
 #include "logger.h"
-#include "event/eventManager.h"
 #include "window.h"
 #include "ui/ui.h"
-
 
 /*
  *  Manages application state and coordinates sub-systems
@@ -35,6 +33,5 @@ private:
     UI                  m_ui;
     Window              m_window;
     Logger*             m_logger                = &Logger::get();
-    EventManager*       m_event_manager         = &EventManager::get();
     bool                m_is_running            = true;
 };

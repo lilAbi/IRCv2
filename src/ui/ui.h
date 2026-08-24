@@ -1,15 +1,12 @@
 #pragma once
 #include "core/logger.h"
-#include "event/eventManager.h"
 #include <imgui.h>
-#include <algorithm>
 #include <array>
 #include <cfloat>
 #include <functional>
 #include <span>
 #include <string>
 #include <string_view>
-#include <utility>
 
 struct Channel {
     std::string m_name;
@@ -54,12 +51,10 @@ public:
         std::span<const Member> members,
         const SendMessageCallback& on_send
     );
-
     void draw_header(std::string_view channel_name, float height);
     void draw_sidebar(ChatUiState& state, std::span<const Channel> channels);
 
-
 private:
     Logger*                     m_logger = &Logger::get();
-    EventManager*               m_event_manager = &EventManager::get();
+
 };

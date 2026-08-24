@@ -3,12 +3,8 @@
 #include <imgui_impl_sdl3.h>
 #include <SDL3/SDL_opengl.h>
 #include <imgui_impl_opengl3.h>
-#include <curl/curl.h>
-
-#include <netinet/in.h>
 
 Application::~Application() {
-    curl_global_cleanup();
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
