@@ -8,7 +8,8 @@
 
 //Queue events and dispatch them
 class EventManager {
-    using EventHandlerVector = std::vector< std::shared_ptr<BaseEventFunctionHandler> >;
+    using EventHandlerPtr       = std::shared_ptr<BaseEventFunctionHandler>;
+    using EventHandlerVector    = std::vector<EventHandlerPtr>;
 public:
     static EventManager& get();
 
@@ -20,7 +21,7 @@ public:
      //register callback functions to be used for fired event
     template<typename T, typename EventType>
     requires std::derived_from<EventType, Event>
-    void subscribe(T* instance, void (T::*OnEventMemberFunction)(std::shared_ptr<EventType> event));
+    void subscribe(T* instance, void (T::*onEventMemberFunction)(std::shared_ptr<EventType> event));
 
      //remove copy/move constructor/assignment operators
      EventManager(const EventManager&) = delete;
@@ -32,48 +33,49 @@ private:
     EventManager();
     ~EventManager() = default;
 
+    //return a copy of the a EventHandlerVector without the expired objects
+    template<typename EventType>
+    EventHandlerVector take_snapshot();
+
+
 private:
     Logger*                     m_logger = &Logger::get();
     //mutex to lock when adding a new subscriber
     mutable std::mutex          m_mutex;
     //each key in the map is an "Event Type" that has a value of a vector of subscribed "Event Handlers (callback functions)"
-    std::flat_map< std::type_index, std::shared_ptr<EventHandlerVector> > m_subscribers;
+    std::flat_map< std::type_index, EventHandlerVector > m_subscribers;
 };
 
 template<typename EventType>
 requires std::derived_from<EventType, Event>
 bool EventManager::publish(std::shared_ptr<EventType> event) {
-    //local event handler queue
-    EventHandlerVector handlers;
-    {   //prevent other threads from publishing multiple messages
-        std::lock_guard guard{m_mutex};
-        //check if EventType has an existing EventHandlerVector and take a local copy
-        if (const auto itr = m_subscribers.find( std::type_index{typeid(EventType)} ); itr != m_subscribers.end() ) {
-            handlers = *(itr->second);
-        } else {
-            m_logger->critical("Event's registered EventHandlerVector was not found");
-            return false;
-        }
+    int invoked = 0;
+    const EventHandlerVector handlers_copy = take_snapshot<EventType>();
+    for ( const EventHandlerPtr& handler : handlers_copy ) {
+        invoked += handler->call(event) ? 1 : 0;
     }
-    //iterate through all the event handlers and handle the event
-    for (const auto& event_handler : handlers) {
-        if (event_handler) {
-            event_handler->call(std::static_pointer_cast<Event>(event));
-        }
-    }
-    return true;
+    return invoked;
 }
 
 template<typename T, typename EventType>
 requires std::derived_from<EventType, Event>
-void EventManager::subscribe(T* instance, void(T::*OnEventMemberFunction)(std::shared_ptr<EventType> event)) {
-    //prevent other threads from subscribing multiple
-    std::lock_guard guard{m_mutex};
-    const std::type_index id = typeid(EventType);
-    //check if EventType has an existing EventHandlerVector
-    if ( !m_subscribers.contains(id) ) {
-        m_subscribers[id] = std::make_shared<EventHandlerVector>(); //create it
+void EventManager::subscribe(T* instance, void(T::*onEventMemberFunction)(std::shared_ptr<EventType> event)) {
+    std::lock_guard lock{m_mutex};
+    auto handler = std::make_shared<MemberFunctionEventHandler<T, EventType>>(std::weak_ptr<T>{instance}, onEventMemberFunction);
+    const std::type_index key{typeid(EventType)};
+    m_subscribers.try_emplace(key).first->second.push_back(std::move(handler));
+}
+
+template<typename EventType>
+EventManager::EventHandlerVector EventManager::take_snapshot() {
+    std::lock_guard lock{m_mutex};
+    if ( const auto itr = m_subscribers.find( std::type_index{typeid(EventType)} ); itr != m_subscribers.end() ) {
+        EventHandlerVector& handlers = itr->second;
+        std::erase_if(handlers, [](const EventHandlerPtr& handler) {
+            return !handler || handler->expired();
+        });
+        return handlers;
+    } else {
+        return {};
     }
-    //"subscribe" a callback to be called when an event fires
-    m_subscribers[id]->push_back( std::make_shared< MemberFunctionEventHandler<T,EventType> >(instance, OnEventMemberFunction) );
 }
