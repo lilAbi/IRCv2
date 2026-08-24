@@ -49,8 +49,6 @@ void Application::loop() {
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
 
-        
-
         //Draw UI
         static ChatUiState state;
         m_ui.draw(

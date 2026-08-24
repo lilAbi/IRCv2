@@ -2,6 +2,8 @@
 
 #include "logger.h"
 #include "window.h"
+#include "container/threadSafeQueue.h"
+#include "irc/ircMetadata.h"
 #include "ui/ui.h"
 
 /*
@@ -30,8 +32,8 @@ private:
     void handle_sdl_event(const SDL_Event& event);
 
 private:
-    UI                  m_ui;
+    Logger*             m_logger = &Logger::get();
     Window              m_window;
-    Logger*             m_logger                = &Logger::get();
-    bool                m_is_running            = true;
+    UI                  m_ui;
+    bool                m_is_running = true;
 };
