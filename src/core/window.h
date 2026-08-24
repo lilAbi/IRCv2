@@ -5,6 +5,12 @@
 
 #include "logger.h"
 
+/*
+ *  This class configures and initializes a "SDL Window" context
+ *  while initializing the opengl context. Then initializes the
+ *  imgui context and takes over from SDL.
+ */
+
 class Window {
     struct SDLWindowDeleter {
         void operator()(SDL_Window* sdl_window_ptr) const {
