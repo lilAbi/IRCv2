@@ -13,7 +13,7 @@
 class IrcNetworkService {
     using Executor = boost::asio::io_context::executor_type;
 public:
-    //initalize the "network service"
+    //initialize the "network service"
     void init();
     //return from "run()"
     void stop();
