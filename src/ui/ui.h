@@ -34,8 +34,6 @@ struct ChatUiState {
     bool                    m_focus_composer{false};
 };
 
-using SendMessageCallback = std::function<void(std::string)>;
-
 constexpr ImVec4 k_sidebar_background{0.10F, 0.14F, 0.19F, 1.0F};
 constexpr ImVec4 k_sidebar_text{0.72F, 0.76F, 0.82F, 1.0F};
 constexpr ImVec4 k_selected_channel_background{0.17F, 0.23F, 0.30F, 1.0F};
@@ -48,8 +46,7 @@ public:
         ChatUiState& state,
         std::span<const Channel> channels,
         std::span<const ChatMessage> messages,
-        std::span<const Member> members,
-        const SendMessageCallback& on_send
+        std::span<const Member> members
     );
     void draw_header(std::string_view channel_name, float height);
     void draw_sidebar(ChatUiState& state, std::span<const Channel> channels);

@@ -3,8 +3,7 @@
 void UI::draw(ChatUiState &state,
     std::span<const Channel> channels,
     std::span<const ChatMessage> messages,
-    std::span<const Member> members,
-    const SendMessageCallback &on_send) {
+    std::span<const Member> members) {
 
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);

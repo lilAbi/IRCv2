@@ -51,17 +51,7 @@ void Application::loop() {
 
         //Draw UI
         static ChatUiState state;
-        m_ui.draw(
-            state,
-            {},
-            {},
-            {},
-            [](std::string text) {
-                // Enqueue the command for the IRC/network thread.
-                // Do not block the rendering thread here.
-                //send_queue.push(std::move(text));
-            }
-        );
+        m_ui.draw(state, {}, {}, {});
 
         ImGui::Render();
         glViewport(0, 0, static_cast<int>(io.DisplaySize.x), static_cast<int>(io.DisplaySize.y));
