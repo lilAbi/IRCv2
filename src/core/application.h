@@ -3,7 +3,10 @@
 #include "logger.h"
 #include "window.h"
 #include "container/threadSafeQueue.h"
+#include "irc/ircClient.h"
 #include "irc/ircMetadata.h"
+#include "irc/ircNetworkService.h"
+#include "irc/sessionManager.h"
 #include "ui/ui.h"
 
 /*
@@ -34,6 +37,10 @@ private:
 private:
     Logger*             m_logger = &Logger::get();
     Window              m_window;
+    IrcNetworkService   m_irc_network_service;
+    ThreadSafeQueue<NetworkEventVariant> m_network_event_queue;
+    SessionManager      m_session_manager;
+    IrcClient           m_irc_client;
     UI                  m_ui;
     bool                m_is_running = true;
 };
