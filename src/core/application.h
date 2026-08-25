@@ -40,7 +40,7 @@ private:
     IrcNetworkService   m_irc_network_service;
     ThreadSafeQueue<NetworkEventVariant> m_network_event_queue;
     SessionManager      m_session_manager;
-    IrcClient           m_irc_client;
+    IrcClient           m_irc_client{m_irc_network_service, m_session_manager};
     UI                  m_ui;
     bool                m_is_running = true;
 };
