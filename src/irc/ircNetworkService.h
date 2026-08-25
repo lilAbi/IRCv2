@@ -10,10 +10,10 @@
  *It has methods executor() and post() to schedule work
  */
 
-class IRCNetworkService {
+class IrcNetworkService {
     using Executor = boost::asio::io_context::executor_type;
 public:
-    //initalize the "network service"
+    //initialize the "network service"
     void init();
     //return from "run()"
     void stop();
@@ -30,6 +30,6 @@ private:
 };
 
 template<typename Func>
-void IRCNetworkService::post(Func&& function) {
+void IrcNetworkService::post(Func&& function) {
     boost::asio::post( m_io_context, std::function<Func>(function) );
 }
