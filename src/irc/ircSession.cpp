@@ -1,7 +1,7 @@
 #include "ircSession.h"
 
 IrcSession::IrcSession(boost::asio::any_io_executor io_executor, ThreadSafeQueue<NetworkEventVariant> &network_event_queue)
-    : m_io_executor(io_executor), m_network_event_queue(network_event_queue){
+    : m_io_executor(io_executor), m_network_event_queue(network_event_queue), m_resolver(io_executor), m_socket(io_executor){
 }
 
 void IrcSession::connect(ServerConfig config) {

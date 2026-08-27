@@ -4,6 +4,8 @@
 #include "container/threadSafeQueue.h"
 #include <boost/asio.hpp>
 #include <memory>
+#include <deque>
+#include <string>
 
 class IrcSession : public std::enable_shared_from_this<IrcSession> {
 public:
@@ -23,15 +25,15 @@ private:
     void startRead();
     void startWrite();
 private:
+    boost::asio::any_io_executor    m_io_executor{};
+    ThreadSafeQueue<NetworkEventVariant>& m_network_event_queue;
     boost::asio::ip::tcp::resolver  m_resolver;
     boost::asio::ip::tcp::socket    m_socket;
-    boost::asio::streambuf          m_read_buffer;
-    std::deque<std::string>         m_write_queue;
+    boost::asio::streambuf          m_read_buffer{};
+    std::deque<std::string>         m_write_queue{};
     int                             m_server_id;
     std::string                     m_nick;
     std::string                     m_username;
     std::string                     m_real_name;
-    SessionState                    m_state;
-    boost::asio::any_io_executor    m_io_executor;
-    ThreadSafeQueue<NetworkEventVariant>& m_network_event_queue;
+    SessionState                    m_state{};
 };
