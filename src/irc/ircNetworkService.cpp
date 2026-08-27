@@ -22,6 +22,6 @@ void IrcNetworkService::stop() {
     m_logger->info("Background thread joined");
 }
 
-IrcNetworkService::Executor IrcNetworkService::executor() {
+IrcNetworkService::Executor IrcNetworkService::get_executor() {
     return m_io_context.get_executor();
 }
