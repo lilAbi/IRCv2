@@ -18,7 +18,7 @@ public:
     //return from "run()"
     void stop();
     //get executor
-    Executor executor();
+    Executor get_executor();
     //submit "job"
     template<typename Func>
     void post(Func&& function);

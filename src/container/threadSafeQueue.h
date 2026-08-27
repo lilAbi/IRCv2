@@ -1,6 +1,6 @@
 #pragma once
 
-#include <queue>
+#include <deque>
 #include <mutex>
 #include <condition_variable>
 #include <functional>
@@ -28,7 +28,7 @@ public:
     void wait(const std::stop_token& stop_token);
 
 private:
-    std::deque<T>             m_deque{};
+    std::deque<T>               m_deque{};
     mutable std::mutex          m_mutex{};
     std::condition_variable_any m_cv{};
 };
