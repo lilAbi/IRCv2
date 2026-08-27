@@ -25,6 +25,10 @@ bool Application::init() {
         m_logger->critical("Error: Window did not initialize");
         return false;
     }
+
+    //start network service
+    m_irc_network_service.init();
+
     return true;
 }
 
@@ -43,6 +47,9 @@ void Application::loop() {
             SDL_Delay(10);
             continue;
         }
+
+        //process queued network events
+        m_application_controller.process_events();
 
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
@@ -72,6 +79,7 @@ void Application::handle_sdl_event(const SDL_Event& event) {
         }
         if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && event.window.windowID == SDL_GetWindowID(m_window.get_sdl_window())) {
             m_logger->info("SDL_EVENT_WINDOW_CLOSE_REQUESTED called");
+            m_irc_network_service.stop();
             m_is_running = false;
         }
     }
