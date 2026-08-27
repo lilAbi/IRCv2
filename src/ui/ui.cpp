@@ -1,10 +1,6 @@
 #include "ui.h"
 
-void UI::draw(ChatUiState &state,
-    std::span<const Channel> channels,
-    std::span<const ChatMessage> messages,
-    std::span<const Member> members) {
-
+void UI::draw() {
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
     ImGui::SetNextWindowSize(viewport->WorkSize);
@@ -23,13 +19,16 @@ void UI::draw(ChatUiState &state,
     ImGui::PopStyleVar(3);
 
     if (ImGui::Begin("##irc-client-root",nullptr,root_flags)) {
+
+        this->draw_pop_up_windows();
+
         constexpr float sidebar_width = 220.0F;
         constexpr float header_height = 48.0F;
         constexpr float composer_height = 48.0F;
         //Left sidebar
         ImGui::PushStyleColor(ImGuiCol_ChildBg,k_sidebar_background);
         if ( ImGui::BeginChild("##sidebar",ImVec2{sidebar_width, 0.0F},ImGuiChildFlags_None) ) {
-            this->draw_sidebar(state, channels);
+            this->draw_sidebar();
         }
         ImGui::EndChild();
         ImGui::PopStyleColor();
@@ -94,7 +93,9 @@ void UI::draw_header(std::string_view channel_name, float height) {
             ImGui::SameLine();
             ImGui::TextDisabled("Welcome to the channel");
             ImGui::TableSetColumnIndex(1);
-            ImGui::Button("...");
+            if (ImGui::Button("...")) {
+                m_state.m_show_join_server_window = !m_state.m_show_join_server_window;
+            };
             ImGui::SameLine();
             ImGui::Button("Users");
             ImGui::EndTable();
@@ -103,24 +104,26 @@ void UI::draw_header(std::string_view channel_name, float height) {
     ImGui::EndChild();
 }
 
-void UI::draw_sidebar(ChatUiState& state, std::span<const Channel> channels) {
+void UI::draw_sidebar() {
     ImGui::TextColored(ImVec4{1.0F, 0.65F, 0.15F, 1.0F},"MY IRC CLIENT");
     ImGui::Spacing();
     ImGui::Separator();
     ImGui::Spacing();
     ImGui::TextColored(ImVec4{0.35F, 0.85F, 0.50F, 1.0F},"Freenode");
 
-    for (std::size_t index = 0; index < channels.size(); ++index) {
+    for (std::size_t index = 0; index < 1; ++index) {
         ImGui::PushID(static_cast<int>(index));
-        const bool selected = state.m_selected_channel == static_cast<int>(index);
-        const std::string label = "# " + channels[index].m_name;
+        //const bool selected = state.m_selected_channel == static_cast<int>(index);
+        //const std::string label = "# " + channels[index].m_name;
         ImGui::PushStyleColor(ImGuiCol_Header, k_selected_channel_background);
         ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4{0.20F, 0.27F, 0.35F, 1.0F});
-        ImGui::PushStyleColor(ImGuiCol_Text, selected ? ImVec4{1, 1, 1, 1} : k_sidebar_text);
+        /*
+        ImGui::PushStyleColor(ImGuiCol_Text, ture ? ImVec4{1, 1, 1, 1} : k_sidebar_text);
         if ( ImGui::Selectable(label.c_str(), selected, ImGuiSelectableFlags_None, ImVec2{ImGui::GetContentRegionAvail().x, 0.0F}) ) {
-            state.m_selected_channel = static_cast<int>(index);
+            //state.m_selected_channel = static_cast<int>(index);
         }
-        ImGui::PopStyleColor(3);
+        */
+        ImGui::PopStyleColor(2);
         ImGui::PopID();
     }
     // Anchor controls near the bottom of the sidebar.
@@ -131,4 +134,30 @@ void UI::draw_sidebar(ChatUiState& state, std::span<const Channel> channels) {
     ImGui::Button("+");
     ImGui::SameLine();
     ImGui::Button("Settings");
+}
+
+void UI::draw_pop_up_windows() {
+    if ( m_state.m_show_join_server_window ) { this->draw_join_server_window(); }
+}
+
+void UI::draw_join_server_window() {
+    const auto total_size = ImGui::GetMainViewport()->WorkSize;
+    constexpr float window_size_x = 640;
+    constexpr float window_size_y = 384;
+    ImGui::SetNextWindowSize( ImVec2(window_size_x, window_size_y) );
+    ImGui::SetNextWindowPos( ImVec2(total_size.x/2 - window_size_x/2,total_size.y/2 - window_size_y/2) );
+    constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove |
+                                       ImGuiWindowFlags_NoResize |
+                                       ImGuiWindowFlags_NoCollapse |
+                                       ImGuiWindowFlags_NoScrollbar;
+
+    if ( !ImGui::Begin("Join Server", &m_state.m_show_join_server_window, flags) ){
+        ImGui::End();
+        return;
+    }
+
+    if ( ImGui::Button("Join Server", ImVec2(-FLT_MIN,0)) ) {
+    }
+
+    ImGui::End();
 }

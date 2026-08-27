@@ -57,8 +57,7 @@ void Application::loop() {
         ImGui::NewFrame();
 
         //Draw UI
-        static ChatUiState state;
-        m_ui.draw(state, {}, {}, {});
+        m_ui.draw();
 
         ImGui::Render();
         glViewport(0, 0, static_cast<int>(io.DisplaySize.x), static_cast<int>(io.DisplaySize.y));
