@@ -43,3 +43,12 @@ struct MessageReceivedEvent{
 };
 
 using NetworkEventVariant = std::variant<ConnectedEvent, DisconnectedEvent, ChannelJoinedEvent, ChannelLeftEvent, MessageReceivedEvent>;
+
+enum class SessionState {
+    Disconnected,
+    Resolving,
+    Connecting,
+    Registering,
+    Connected,
+    Disconnecting
+}
