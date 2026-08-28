@@ -1,5 +1,9 @@
 #include "ui.h"
 
+UI::UI(IrcClient &client) : m_irc_client(client) {
+
+}
+
 void UI::draw() {
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
@@ -157,6 +161,7 @@ void UI::draw_join_server_window() {
     }
 
     if ( ImGui::Button("Join Server", ImVec2(-FLT_MIN,0)) ) {
+        m_irc_client.connect({});
     }
 
     ImGui::End();

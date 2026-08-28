@@ -18,6 +18,7 @@ struct UiState {
 //Should own the view model
 class UI {
 public:
+    UI(IrcClient& client);
     //draw view model
     void draw();
 

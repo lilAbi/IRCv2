@@ -5,7 +5,7 @@ SessionManager::SessionManager(boost::asio::any_io_executor io_executor, ThreadS
 }
 
 void SessionManager::connect(ServerConfig config) {
-
+    m_network_event_queue.push(ConnectedEvent{1});
 }
 
 void SessionManager::disconnect(int server_id) {

@@ -5,6 +5,7 @@ IrcClient::IrcClient(IrcNetworkService& service, SessionManager& session_manager
 }
 
 void IrcClient::connect(ServerConfig config) {
+    m_session_manager.connect({});
 }
 
 void IrcClient::disconnect(int server_id) {

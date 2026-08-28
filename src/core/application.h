@@ -37,14 +37,14 @@ private:
     void handle_sdl_event(const SDL_Event& event);
 
 private:
-    Logger*             m_logger = &Logger::get();
-    Window              m_window;
-    IrcNetworkService   m_irc_network_service;
-    IrcViewModel        m_irc_view_model;
+    Logger*                 m_logger = &Logger::get();
+    Window                  m_window;
+    IrcNetworkService       m_irc_network_service;
+    IrcViewModel            m_irc_view_model;
     ThreadSafeQueue<NetworkEventVariant> m_network_event_queue;
-    ApplicationController m_application_controller{m_irc_view_model, m_network_event_queue};
-    SessionManager      m_session_manager{m_irc_network_service.get_executor(), m_network_event_queue};
-    IrcClient           m_irc_client{m_irc_network_service, m_session_manager};
-    UI                  m_ui;
-    bool                m_is_running = true;
+    ApplicationController   m_application_controller{m_irc_view_model, m_network_event_queue};
+    SessionManager          m_session_manager{m_irc_network_service.get_executor(), m_network_event_queue};
+    IrcClient               m_irc_client{m_irc_network_service, m_session_manager};
+    UI                      m_ui{m_irc_client};
+    bool                    m_is_running = true;
 };
