@@ -10,6 +10,10 @@ void SessionManager::connect(ServerConfig config) {
         m_logger->critical("Session already created for server_id: {}", config.m_server_id);
     } else {
         //make a new session
+        m_logger->info("Creating a new IRCSession for host: {}", config.m_host);
+        const auto new_sesion = std::make_shared<IrcSession>(m_io_executor, m_network_event_queue);
+        m_sessions[config.m_server_id] = new_sesion;
+        new_sesion->connect(std::move(config));
     }
 }
 

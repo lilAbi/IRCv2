@@ -6,8 +6,15 @@ IrcSession::IrcSession(const boost::asio::any_io_executor& io_executor, ThreadSa
 
 void IrcSession::connect(ServerConfig config) {
     m_logger->trace("Attempting connection to endpoint {}", config.m_host);
+
+    auto resolver_results = m_resolver.resolve(config.m_host, config.m_port);
+
+    /*
+    resolver_results->
     boost::asio::ip::tcp::endpoint endpoint{ boost::asio::ip::make_address_v4(config.m_host), static_cast<unsigned short>(stoi(config.m_port)) };
+    m_socket.async_connect(*x.begin(), [](const boost::system::error_code& error){});
     m_logger->trace("Attempting connection to endpoint {}", config.m_host);
+    */
     //endpoint.address().to_string()
     //dns lookup
     /*
