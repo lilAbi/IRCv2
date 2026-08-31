@@ -1,9 +1,15 @@
 #pragma once
 
 #include "container/threadSafeQueue.h"
+#include "core/logger.h"
 #include "ircMetadata.h"
 #include "ircSession.h"
 #include <boost/asio.hpp>
+
+/*
+ * Handles creation of new sessions on connect, and dispatches send/join commands to them.
+ * Ensures only one active session per server_id .
+ */
 
 class SessionManager {
 public:
@@ -16,7 +22,8 @@ public:
     void sendMessage(int server_id, std::string target, std::string message);
 
 private:
-    boost::asio::any_io_executor m_io_executor;
-    ThreadSafeQueue<NetworkEventVariant>& m_network_event_queue;
+    Logger*                                 m_logger = &Logger::get();
+    ThreadSafeQueue<NetworkEventVariant>&   m_network_event_queue;
+    boost::asio::any_io_executor            m_io_executor;
     std::unordered_map<int, std::shared_ptr<IrcSession>> m_sessions;
 };
