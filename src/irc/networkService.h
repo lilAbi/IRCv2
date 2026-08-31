@@ -1,8 +1,8 @@
 #pragma once
 
-#include <thread>
 #include <boost/asio.hpp>
-
+#include <thread>
+#include <functional>
 #include "core/logger.h"
 
 /*
@@ -10,7 +10,9 @@
  *It has methods executor() and post() to schedule work
  */
 
-class IrcNetworkService {
+//not really a "NetworkService"
+
+class NetworkService {
     using Executor = boost::asio::io_context::executor_type;
 public:
     //initialize the "network service"
@@ -21,7 +23,7 @@ public:
     Executor get_executor();
     //submit "job"
     template<typename Func>
-    void post(Func&& function);
+    void post(Func&& func);
 private:
     Logger*                 m_logger = &Logger::get();
     std::jthread            m_io_thread;
@@ -30,6 +32,6 @@ private:
 };
 
 template<typename Func>
-void IrcNetworkService::post(Func&& function) {
-    boost::asio::post( m_io_context, std::function<Func>(function) );
+void NetworkService::post(Func&& func) {
+    boost::asio::post( m_io_context, std::forward<Func>(func) );
 }
