@@ -6,7 +6,7 @@
 #include "irc/applicationController.h"
 #include "irc/ircClient.h"
 #include "irc/ircMetadata.h"
-#include "irc/ircNetworkService.h"
+#include "irc/networkService.h"
 #include "irc/ircViewModel.h"
 #include "irc/sessionManager.h"
 #include "ui/ui.h"
@@ -39,7 +39,7 @@ private:
 private:
     Logger*                 m_logger = &Logger::get();
     Window                  m_window;
-    IrcNetworkService       m_irc_network_service;
+    NetworkService       m_irc_network_service;
     IrcViewModel            m_irc_view_model;
     ThreadSafeQueue<NetworkEventVariant> m_network_event_queue;
     ApplicationController   m_application_controller{m_irc_view_model, m_network_event_queue};

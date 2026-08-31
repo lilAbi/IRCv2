@@ -29,6 +29,7 @@ bool Application::init() {
     //start network service
     m_irc_network_service.init();
 
+    m_logger->trace("Application is initialized");
     return true;
 }
 

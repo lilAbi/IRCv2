@@ -27,4 +27,3 @@ class IrcViewModel {
 public:
     std::unordered_map<int, ServerState> m_channels;
 };
-
