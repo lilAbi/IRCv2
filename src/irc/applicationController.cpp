@@ -6,12 +6,18 @@ ApplicationController::ApplicationController(IrcViewModel& view_model, ThreadSaf
 
 void ApplicationController::process_events() {
     m_network_event_queue.drain([this] (NetworkEventVariant network_event_variant) -> void {
-        std::visit(
-            [this](auto&& event) {
-                this->handleEvent(event);
-            },
-            network_event_variant
-        );
+        try {
+            std::visit(
+                [this](auto&& event) {
+                    this->handleEvent(event);
+                },
+                network_event_variant
+            );
+        } catch (const std::exception& exception) {
+            m_logger->critical( "Unhandled exception while processing ApplicationController::process_events(): {}", exception.what() );
+        } catch (...) {
+            m_logger->critical("Unknown exception while processing ApplicationController::process_events()");
+        }
     });
 }
 
