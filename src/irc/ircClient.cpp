@@ -1,11 +1,22 @@
 #include "ircClient.h"
 
-IrcClient::IrcClient(IrcNetworkService& service, SessionManager& session_manager)
-    : m_irc_network_service(service),   m_session_manager(session_manager) {
+IrcClient::IrcClient(NetworkService& service, SessionManager& session_manager)
+    : m_network_service(service),   m_session_manager(session_manager) {
 }
 
 void IrcClient::connect(ServerConfig config) {
-    m_session_manager.connect({});
+    config.m_server_id = ++m_server_id;
+    m_logger->info("Submitting a new Connection request");
+    m_logger->debug("Host: {}", config.m_host);
+    m_logger->debug("Port: {}", config.m_port);
+    m_logger->debug("Nick: {}", config.m_port);
+    m_logger->debug("Username: {}", config.m_port);
+    m_logger->debug("Server ID: {}", config.m_port);
+    m_network_service.post(
+        [this, config = std::move(config)]() mutable {
+            m_session_manager.connect(std::move(config));
+        }
+    );
 }
 
 void IrcClient::disconnect(int server_id) {
