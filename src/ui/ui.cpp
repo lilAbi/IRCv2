@@ -1,4 +1,5 @@
 #include "ui.h"
+#include "imgui_stdlib.h"
 
 UI::UI(IrcClient &client) : m_irc_client(client) {
 
@@ -145,6 +146,7 @@ void UI::draw_pop_up_windows() {
 }
 
 void UI::draw_join_server_window() {
+    std::string host, port, nickname, username, realName;
     const auto total_size = ImGui::GetMainViewport()->WorkSize;
     constexpr float window_size_x = 640;
     constexpr float window_size_y = 384;
@@ -160,9 +162,50 @@ void UI::draw_join_server_window() {
         return;
     }
 
-    if ( ImGui::Button("Join Server", ImVec2(-FLT_MIN,0)) ) {
-        m_irc_client.connect({});
+    /*  Description */
+    ImGui::TextUnformatted("Enter the IRC server connection information.");
+    ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
+    /*  Server Hostname */
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    ImGui::InputTextWithHint("##server", "irc.example.net", &host);
+    ImGui::TextDisabled("Server");
+    ImGui::Spacing();
+    /*  Port */
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    ImGui::InputTextWithHint("##port", "6667", &host);
+    ImGui::TextDisabled("Port");
+    ImGui::Spacing();
+    /* Nickname */
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    ImGui::InputTextWithHint("##nickname", "nickname", &nickname);
+    ImGui::TextDisabled("Nickname");
+    ImGui::Spacing();
+    /* Optional  */
+    if (ImGui::CollapsingHeader("Advanced")) {
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        ImGui::InputTextWithHint("##username","defaults to nickname", &username);
+        ImGui::TextDisabled("Username");
+        ImGui::Spacing();
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        ImGui::InputTextWithHint("##realname", "defaults to nickname", &realName);
+        ImGui::TextDisabled("Real name");
     }
 
+    const float button_height = ImGui::GetFrameHeight();
+    const float desired_y = ImGui::GetWindowHeight() - button_height - ImGui::GetStyle().WindowPadding.y;
+    if (ImGui::GetCursorPosY() < desired_y) { ImGui::SetCursorPosY(desired_y); }
+    constexpr float button_width = 120.0F;
+    if (ImGui::Button("Cancel", ImVec2{button_width, 0.0F})) {
+
+    }
+    ImGui::SameLine();
+    if ( ImGui::Button("Connect", ImVec2{button_width, 0.0F}) ) {
+        m_irc_client.connect({
+            .m_host = std::move(host),
+            .m_port = std::move(port),
+            .m_nick = std::move(nickname),
+            .m_username = std::move(username)
+        });
+    }
     ImGui::End();
 }
