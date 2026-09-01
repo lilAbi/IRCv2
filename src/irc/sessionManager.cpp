@@ -6,7 +6,7 @@ SessionManager::SessionManager(boost::asio::any_io_executor io_executor, ThreadS
 
 void SessionManager::connect(ServerConfig config) {
     m_logger->trace("");
-    if (!m_sessions.contains(config.m_server_id)) {
+    if (m_sessions.contains(config.m_server_id)) {
         m_logger->critical("Session already created for server_id: {}", config.m_server_id);
     } else {
         //make a new session

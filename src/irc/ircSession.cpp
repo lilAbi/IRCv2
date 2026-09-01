@@ -9,6 +9,12 @@ void IrcSession::connect(ServerConfig config) {
 
     auto resolver_results = m_resolver.resolve(config.m_host, config.m_port);
 
+    if ( resolver_results.max_size() != 0 ) {
+        //resolver_results.begin()->endpoint();
+    } else {
+        m_logger->trace("resolver_resolts");
+    }
+
     /*
     resolver_results->
     boost::asio::ip::tcp::endpoint endpoint{ boost::asio::ip::make_address_v4(config.m_host), static_cast<unsigned short>(stoi(config.m_port)) };
