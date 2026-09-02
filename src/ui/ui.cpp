@@ -146,7 +146,6 @@ void UI::draw_pop_up_windows() {
 }
 
 void UI::draw_join_server_window() {
-    std::string host, port, nickname, username, realName;
     const auto total_size = ImGui::GetMainViewport()->WorkSize;
     constexpr float window_size_x = 640;
     constexpr float window_size_y = 384;
@@ -167,27 +166,27 @@ void UI::draw_join_server_window() {
     ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
     /*  Server Hostname */
     ImGui::SetNextItemWidth(-FLT_MIN);
-    ImGui::InputTextWithHint("##server", "irc.example.net", &host);
+    ImGui::InputTextWithHint("##server", "irc.example.net", &m_state.host);
     ImGui::TextDisabled("Server");
     ImGui::Spacing();
     /*  Port */
     ImGui::SetNextItemWidth(-FLT_MIN);
-    ImGui::InputTextWithHint("##port", "6667", &host);
+    ImGui::InputTextWithHint("##port", "6667", &m_state.port);
     ImGui::TextDisabled("Port");
     ImGui::Spacing();
     /* Nickname */
     ImGui::SetNextItemWidth(-FLT_MIN);
-    ImGui::InputTextWithHint("##nickname", "nickname", &nickname);
+    ImGui::InputTextWithHint("##nickname", "nickname", &m_state.nickname);
     ImGui::TextDisabled("Nickname");
     ImGui::Spacing();
     /* Optional  */
     if (ImGui::CollapsingHeader("Advanced")) {
         ImGui::SetNextItemWidth(-FLT_MIN);
-        ImGui::InputTextWithHint("##username","defaults to nickname", &username);
+        ImGui::InputTextWithHint("##username","defaults to nickname", &m_state.username);
         ImGui::TextDisabled("Username");
         ImGui::Spacing();
         ImGui::SetNextItemWidth(-FLT_MIN);
-        ImGui::InputTextWithHint("##realname", "defaults to nickname", &realName);
+        ImGui::InputTextWithHint("##realname", "defaults to nickname", &m_state.realName);
         ImGui::TextDisabled("Real name");
     }
 
@@ -201,10 +200,10 @@ void UI::draw_join_server_window() {
     ImGui::SameLine();
     if ( ImGui::Button("Connect", ImVec2{button_width, 0.0F}) ) {
         m_irc_client.connect({
-            .m_host = std::move(host),
-            .m_port = std::move(port),
-            .m_nick = std::move(nickname),
-            .m_username = std::move(username)
+            .m_host = std::move(m_state.host),
+            .m_port = std::move(m_state.port),
+            .m_nick = std::move(m_state.nickname),
+            .m_username = std::move(m_state.username)
         });
     }
     ImGui::End();

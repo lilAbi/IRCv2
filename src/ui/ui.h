@@ -10,6 +10,13 @@ constexpr ImVec4 k_selected_channel_background{0.17F, 0.23F, 0.30F, 1.0F};
 
 struct UiState {
     bool m_show_join_server_window = false;
+
+    //server config state
+    std::string host = "192.168.50.226";
+    std::string port = "6667";
+    std::string nickname;
+    std::string username;
+    std::string realName;
 };
 
 //Should own the view model
