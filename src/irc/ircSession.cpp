@@ -5,31 +5,35 @@ IrcSession::IrcSession(const boost::asio::any_io_executor& io_executor, ThreadSa
 }
 
 void IrcSession::connect(ServerConfig config) {
-    m_logger->trace("Attempting connection to endpoint {}", config.m_host);
-
-    auto resolver_results = m_resolver.resolve(config.m_host, config.m_port);
-
-    if ( resolver_results.max_size() != 0 ) {
-        //resolver_results.begin()->endpoint();
-    } else {
-        m_logger->trace("resolver_resolts");
+    m_logger->info("Attempting to resolve an endpoint to host: {}", config.m_host);
+    //attempt to resolve and endpoint
+    const auto endpoints = m_resolver.resolve(config.m_host, config.m_port);
+    if ( !endpoints.empty() ) {
+        //grab and use the first endpoint
+        const auto endpoint = endpoints.begin()->endpoint();
+        m_logger->info("Found and using endpoint: {}", endpoint.address().to_string());
+        //attempt to connect to the endpoint
+        m_socket.async_connect(endpoint, [this, current_session = this->shared_from_this()] (const boost::system::error_code& error) {
+            if (!error) {
+                m_logger->info("Connection established");
+                //create a buffer to store the incoming session data
+                auto buffer = std::make_shared<std::array<char, 4096>>();
+                //read from the socket
+                current_session->m_socket.async_read_some(
+                    boost::asio::buffer(buffer->data(), buffer->size()),
+                    [this, buffer = std::move(buffer)](const boost::system::error_code& error, std::size_t bytes_transferred) {
+                        if (!error) {
+                            m_logger->info("{}", buffer->data());
+                        } else {
+                            m_logger->error("[read failed] {}", error.message());
+                        }
+                    }
+                );
+            } else {
+                m_logger->error("[Connection failed] {}", error.message());
+            }
+        }); //end of async_connect
     }
-
-    /*
-    resolver_results->
-    boost::asio::ip::tcp::endpoint endpoint{ boost::asio::ip::make_address_v4(config.m_host), static_cast<unsigned short>(stoi(config.m_port)) };
-    m_socket.async_connect(*x.begin(), [](const boost::system::error_code& error){});
-    m_logger->trace("Attempting connection to endpoint {}", config.m_host);
-    */
-    //endpoint.address().to_string()
-    //dns lookup
-    /*
-    m_resolver.async_resolve(endpoint, [](const boost::system::error_code& error, const boost::asio::ip::tcp::resolver::results_type& results) {
-
-    });
-    */
-    //m_resolver.resolve()
-    //boost::asio::async_connect()
 }
 
 void IrcSession::disconnect() {

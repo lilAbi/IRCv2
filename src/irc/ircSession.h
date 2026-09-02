@@ -33,7 +33,7 @@ private:
     void startWrite();
 private:
     ThreadSafeQueue<NetworkEventVariant>& m_network_event_queue;
-    Logger*                         m_logger = &Logger::get();
+    std::shared_ptr<spdlog::logger> m_logger = Logger::get().get_network_logger();
     boost::asio::ip::tcp::resolver  m_resolver;
     boost::asio::ip::tcp::socket    m_socket;
     boost::asio::streambuf          m_read_buffer;
