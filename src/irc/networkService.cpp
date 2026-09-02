@@ -3,13 +3,15 @@
 void NetworkService::init() {
     m_logger->info("Starting Network Service...");
     //run the io_context in a background thread
-    m_io_thread = std::jthread([this]() {
+    m_io_thread = std::jthread([this](const std::stop_token& token) {
         m_logger->get_network_logger()->info("Background jthread worker started...");
-        try {
-            //run the io_context object's event processing loop.
-            m_io_context.run();
-        } catch (const std::exception& payload) {
-            m_logger->get_network_logger()->critical("caught: {}", payload.what());
+        while (!token.stop_requested()) {
+            try {
+                //run the io_context object's event processing loop.
+                m_io_context.run();
+            } catch (const std::exception& payload) {
+                m_logger->get_network_logger()->critical("caught: {}", payload.what());
+            }
         }
         m_logger->get_network_logger()->info("Finished processing io_context object's event processing loop");
     });
@@ -18,6 +20,7 @@ void NetworkService::init() {
 
 void NetworkService::stop() {
     m_logger->info("Shutting down Network Service...");
+    m_io_thread.request_stop();
     m_work_guard.reset();
     m_io_thread.join();
     m_logger->info("Network Service background thread joined");
