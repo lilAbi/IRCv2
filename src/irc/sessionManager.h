@@ -22,7 +22,7 @@ public:
     void sendMessage(int server_id, std::string target, std::string message);
 
 private:
-    Logger*                                 m_logger = &Logger::get();
+    std::shared_ptr<spdlog::logger>         m_logger = Logger::get().get_network_logger();
     ThreadSafeQueue<NetworkEventVariant>&   m_network_event_queue;
     boost::asio::any_io_executor            m_io_executor;
     std::unordered_map<int, std::shared_ptr<IrcSession>> m_sessions;
