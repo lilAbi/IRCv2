@@ -27,7 +27,7 @@ public:
 private:
     void onResolve();
     void onConnect();
-    void onRead(std::size_t length, const boost::system::error_code& ec);
+    void onRead();
     void onWrite(std::size_t length, const boost::system::error_code& ec);
     void startRead();
     void startWrite();

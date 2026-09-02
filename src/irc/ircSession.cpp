@@ -16,19 +16,7 @@ void IrcSession::connect(ServerConfig config) {
         m_socket.async_connect(endpoint, [this, current_session = this->shared_from_this()] (const boost::system::error_code& error) {
             if (!error) {
                 m_logger->info("Connection established");
-                //create a buffer to store the incoming session data
-                auto buffer = std::make_shared<std::array<char, 4096>>();
-                //read from the socket
-                current_session->m_socket.async_read_some(
-                    boost::asio::buffer(buffer->data(), buffer->size()),
-                    [this, buffer = std::move(buffer)](const boost::system::error_code& error, std::size_t bytes_transferred) {
-                        if (!error) {
-                            m_logger->info("{}", buffer->data());
-                        } else {
-                            m_logger->error("[read failed] {}", error.message());
-                        }
-                    }
-                );
+                current_session->onRead();
             } else {
                 m_logger->error("[Connection failed] {}", error.message());
             }
@@ -60,8 +48,20 @@ void IrcSession::onConnect() {
 
 }
 
-void IrcSession::onRead(std::size_t length, const boost::system::error_code &ec) {
-
+void IrcSession::onRead() {
+    auto buffer = std::make_shared<std::array<char, 4096>>();
+    //read from the socket
+    m_socket.async_read_some(
+        boost::asio::buffer(buffer->data(), buffer->size()),
+        [this, buffer = buffer, current_session = this->shared_from_this()](const boost::system::error_code& error, std::size_t bytes_transferred) {
+            if (!error) {
+                m_logger->info("{}", buffer->data());
+                current_session->onRead();
+            } else {
+                m_logger->error("[read failed] {}", error.message());
+            }
+        }
+    );
 }
 
 void IrcSession::onWrite(std::size_t length, const boost::system::error_code &ec) {
