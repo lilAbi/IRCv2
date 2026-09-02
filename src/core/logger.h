@@ -36,6 +36,11 @@ public:
         m_default_logger->critical(format_str, std::forward<TArgs>(args)...);
     }
 
+    template <typename... TArgs>
+    void warn(fmt::format_string<TArgs...> format_str, TArgs&&... args) {
+        m_default_logger->warn(format_str, std::forward<TArgs>(args)...);
+    }
+
     std::shared_ptr<spdlog::logger> get_network_logger() {
         return m_thread_logger;
     }
