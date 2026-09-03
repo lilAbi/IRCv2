@@ -12,11 +12,20 @@ void IrcClient::connect(ServerConfig config) {
     m_logger->debug("Nick: {}", config.m_nick);
     m_logger->debug("Username: {}", config.m_username);
     m_logger->debug("Server ID: {}", config.m_server_id);
+    //attempt to connect to the server
     m_network_service.post(
-        [this, config = std::move(config)]() mutable {
+        [this, config = config]() mutable {
             m_session_manager.connect(std::move(config));
         }
     );
+    //submit irc registration protocol
+    /*
+    m_network_service.post(
+       [this, config = std::move(config)]() mutable {
+           m_session_manager.connect(std::move(config));
+       }
+   );
+   */
 }
 
 void IrcClient::disconnect(int server_id) {

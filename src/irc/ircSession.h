@@ -13,8 +13,10 @@
  *  Represents one IRC connection.
  *  Manages connection state, and implements the IRC protocol (sending NICK/USER, parsing incoming lines, handling PING, etc.).
  */
+class SessionManager;
 
 class IrcSession : public std::enable_shared_from_this<IrcSession> {
+    friend SessionManager;
 public:
     IrcSession(const boost::asio::any_io_executor& io_executor, ThreadSafeQueue<NetworkEventVariant>& network_event_queue);
 
@@ -25,8 +27,11 @@ public:
     void sendMessage(std::string target, std::string message);
 
 private:
+    //
+    void updateServerConfig(ServerConfig config);
     void onResolve();
     void onConnect();
+    //fire off an async read
     void onRead();
     void onWrite(std::size_t length, const boost::system::error_code& ec);
     void startRead();
