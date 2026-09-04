@@ -45,6 +45,6 @@ private:
     ApplicationController   m_application_controller{m_irc_view_model, m_network_event_queue};
     SessionManager          m_session_manager{m_irc_network_service.get_executor(), m_network_event_queue};
     IrcClient               m_irc_client{m_irc_network_service, m_session_manager};
-    UI                      m_ui{m_irc_client};
+    UI                      m_ui{m_irc_client, m_irc_view_model};
     bool                    m_is_running = true;
 };
