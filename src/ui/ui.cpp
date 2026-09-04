@@ -126,12 +126,8 @@ void UI::draw_chat_panel() {
     draw_composer(*server, *channel, composer_height);
 }
 
-void UI::draw_member_list() {
-
-}
-
 void UI::draw_member_list(const ChannelState* channel) {
-
+    
 }
 
 void UI::draw_header(const ServerState& server, const ChannelState& channel, float height) {
@@ -164,12 +160,33 @@ void UI::draw_message_history(const ChannelState& channel) {
         //ImGui::SetCursorPosX( std::max(ImGui::GetCursorPosX(), ImGui::GetWindowContentRegionMax().x - timestamp_width) );
         //ImGui::TextDisabled("%s", timestamp.c_str());
         //actual message
-        
+        ImGui::PushTextWrapPos(0.0F);
+        ImGui::TextWrapped("%s", message.m_text.c_str());
+        ImGui::PopTextWrapPos();
+        ImGui::Spacing();
+        ImGui::PopID();
     }
+    if (stick_to_bottom) ImGui::SetScrollHereY(1.0F);
 }
 
 void UI::draw_composer(const ServerState& server, const ChannelState& channel, float height) {
-
+    if ( !ImGui::BeginChild("##composer", ImVec2{0.0F, height}, ImGuiChildFlags_Borders, ImGuiWindowFlags_NoScrollbar) ) {
+        ImGui::EndChild();
+        return;
+    }
+    constexpr float send_button_width = 70.0F;
+    const float input_width = std::max(1.0F, ImGui::GetContentRegionAvail().x - send_button_width - ImGui::GetStyle().ItemSpacing.x);
+    ImGui::SetNextItemWidth(input_width);
+    const std::string hint = "Message #" + channel.m_name;
+    const bool pressed_enter = ImGui::InputTextWithHint("##message-input", hint.c_str(), &m_state.m_message_input, ImGuiInputTextFlags_EnterReturnsTrue);
+    ImGui::SameLine();
+    const bool pressed_send = ImGui::Button("Send", ImVec2{send_button_width, 0.0F});
+    if ( (pressed_enter || pressed_send) && !m_state.m_message_input.empty() ) {
+        std::string message = std::exchange(m_state.m_message_input, {});
+        m_irc_client.sendMessage(server.m_server_id, channel.m_name, std::move(message));
+        ImGui::SetKeyboardFocusHere(-1);
+    }
+    ImGui::EndChild();
 }
 
 void UI::draw_empty_chat() {

@@ -15,7 +15,6 @@ private:
     //main layout
     void draw_sidebar();
     void draw_chat_panel();
-    void draw_member_list();
     void draw_member_list(const ChannelState* channel);
     void draw_header(const ServerState& server, const ChannelState& channel, float height);
     void draw_message_history(const ChannelState& channel);
