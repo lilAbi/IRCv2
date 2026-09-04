@@ -1,12 +1,10 @@
 #include "ui.h"
 #include "imgui_stdlib.h"
 
-UI::UI(IrcClient &client) : m_irc_client(client) {
-
-}
+UI::UI(IrcClient &client, IrcViewModel& view_model) : m_irc_client(client), m_irc_view_model(view_model) {}
 
 void UI::draw() {
-    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    const ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
     ImGui::SetNextWindowSize(viewport->WorkSize);
 
@@ -17,128 +15,177 @@ void UI::draw() {
         ImGuiWindowFlags_NoSavedSettings |
         ImGuiWindowFlags_NoBringToFrontOnFocus;
 
-    // These styles are captured when the root window begins.
+    //These styles are captured when the root window begins.
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0F);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0F);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
-    ImGui::PopStyleVar(3);
 
-    if (ImGui::Begin("##irc-client-root",nullptr,root_flags)) {
-
+    if ( ImGui::Begin("##irc-client-root",nullptr, root_flags) ) {
+        ImGui::PopStyleVar(3);
         this->draw_pop_up_windows();
 
-        constexpr float sidebar_width = 220.0F;
-        constexpr float header_height = 48.0F;
-        constexpr float composer_height = 48.0F;
-        //Left sidebar
-        ImGui::PushStyleColor(ImGuiCol_ChildBg,k_sidebar_background);
-        if ( ImGui::BeginChild("##sidebar",ImVec2{sidebar_width, 0.0F},ImGuiChildFlags_None) ) {
-            this->draw_sidebar();
-        }
-        ImGui::EndChild();
-        ImGui::PopStyleColor();
+        constexpr ImGuiTableFlags layout_flags =
+            ImGuiTableFlags_Resizable |
+            ImGuiTableFlags_BordersInnerV |
+            ImGuiTableFlags_SizingStretchProp;
 
-        //Everything to the right of the sidebar
-        ImGui::SameLine(0.0F, 0.0F);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding,ImVec2{0, 0});
+        const ImVec2 available = ImGui::GetContentRegionAvail();
 
-        if (ImGui::BeginChild("##workspace", ImVec2{0.0F, 0.0F}, ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar)) {
-            ImGui::PopStyleVar();
-            std::string_view selected_channel = "no-channel";
-
-            /*
-            if ( state.selected_channel >= 0 && state.selected_channel < static_cast<int>(channels.size()) ){
-                selected_channel = channels[state.selected_channel].name;
-            }
-            */
-
-            this->draw_header(selected_channel, header_height);
-
-             //Reserve enough room beneath the body for the composer.
-            const float body_height = std::max(1.0F,ImGui::GetContentRegionAvail().y - composer_height - ImGui::GetStyle().ItemSpacing.y);
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
-            ImGui::PopStyleVar();
-
-            if ( ImGui::BeginChild("##workspace-body", ImVec2{0.0F, body_height}, ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar) ) {
-                constexpr ImGuiTableFlags body_flags =
-                    ImGuiTableFlags_Resizable |
-                    ImGuiTableFlags_BordersInnerV |
-                    ImGuiTableFlags_SizingStretchProp;
-
-                const ImVec2 body_size = ImGui::GetContentRegionAvail();
-
-                if (ImGui::BeginTable("##body-columns",2, body_flags, body_size)) {
-                    ImGui::TableSetupColumn("Chat", ImGuiTableColumnFlags_WidthStretch);
-                    ImGui::TableSetupColumn("Members", ImGuiTableColumnFlags_WidthFixed, 185.0F);
-                    ImGui::TableNextRow(ImGuiTableRowFlags_None, body_size.y);
-                    ImGui::TableSetColumnIndex(0);
-                    //draw_message_history(state, messages);
-                    ImGui::TableSetColumnIndex(1);
-                    //draw_member_list(state, members);
-                    ImGui::EndTable();
-                }
+        //basically our simple ui can be arranged into 3 columns
+        if ( ImGui::BeginTable("##main-layout", 3, layout_flags, available) ) {
+            //left side bar
+            ImGui::TableSetupColumn("Channels", ImGuiTableColumnFlags_WidthFixed,210.0F);
+            //center
+            ImGui::TableSetupColumn("Chat", ImGuiTableColumnFlags_WidthStretch);
+            //right side bar
+            ImGui::TableSetupColumn("Users", ImGuiTableColumnFlags_WidthFixed, 220.0F);
+            //set the size of the next row
+            ImGui::TableNextRow(ImGuiTableRowFlags_None, available.y );
+            //Draw Left Sidebar
+            ImGui::TableSetColumnIndex(0);
+            if ( ImGui::BeginChild("##channel-sidebar", ImVec2{0.0F, 0.0F}) ) {
+                draw_sidebar();
             }
             ImGui::EndChild();
-            //draw_composer(state, composer_height, on_send);
+            //Chat
+            ImGui::TableSetColumnIndex(1);
+            if ( ImGui::BeginChild("##chat-workspace", ImVec2{0.0F, 0.0F}, ImGuiChildFlags_None,ImGuiWindowFlags_NoScrollbar) ) {
+                //draw_chat_panel();
+            }
+            ImGui::EndChild();
+            //members
+            ImGui::TableSetColumnIndex(2);
+            if ( ImGui::BeginChild("##member-sidebar", ImVec2{0.0F, 0.0F}) ) {
+                //draw_member_list(selected_channel());
+            }
+            ImGui::EndChild();
+            ImGui::EndTable();
         }
-        ImGui::EndChild();
     }
     ImGui::End();
 }
 
-void UI::draw_header(std::string_view channel_name, float height) {
+void UI::draw_sidebar() {
+    ImGui::TextUnformatted("Channels:");
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+    if (m_irc_view_model.m_servers.empty()) {
+        ImGui::TextDisabled("Not connected");
+    }
+    for (const auto& [server_id, server_state] : m_irc_view_model.m_servers) {
+        ImGui::PushID(server_id);
+        //server heading
+        const std::string server_name = server_state.m_name.empty() ? "Server " + std::to_string(server_id) : server_state.m_name;
+        ImGui::TextDisabled("%s", server_name.c_str());
+        //status view
+        const bool status_selected = m_state.m_selected_server_id == server_id && m_state.m_selected_channel.empty();
+        if (ImGui::Selectable("  Status", status_selected)) {
+            m_state.m_selected_server_id = server_id;
+            m_state.m_selected_channel.clear();
+        }
+        //channels
+        for (const auto& [channel_name, channel] : server_state.m_channels) {
+            ImGui::PushID(channel_name.c_str());
+            const bool selected = m_state.m_selected_server_id == server_id && m_state.m_selected_channel == channel_name;
+            std::string label = "#  " + channel.m_name;
+            if ( ImGui::Selectable(label.c_str(), selected) ) {
+                m_state.m_selected_server_id = server_id;
+                m_state.m_selected_channel = channel_name;
+            }
+            ImGui::Spacing();
+            ImGui::PopID();
+        }
+        ImGui::Spacing();
+        ImGui::PopID();
+    }
+    const float button_height   = ImGui::GetFrameHeight();
+    const float desired_y       = ImGui::GetWindowHeight() - button_height - ImGui::GetStyle().WindowPadding.y;
+    if ( ImGui::GetCursorPosY() < desired_y ) ImGui::SetCursorPosY(desired_y);
+    if ( ImGui::Button("+ Connect", ImVec2{-FLT_MIN, 0.0F}) ) {
+        m_state.m_show_join_server_window = true;
+    }
+}
+
+void UI::draw_chat_panel() {
+    const ServerState*  server = selected_server();
+    const ChannelState* channel = selected_channel();
+    if ( !server || !channel ) {
+        draw_empty_chat();
+        return;
+    }
+    constexpr float header_height = 52.0F;
+    constexpr float composer_height = 54.0F;
+    draw_header(*server, *channel, header_height);
+    //everything remaining except composer
+    const float history_height = std::max(1.0F, ImGui::GetContentRegionAvail().y - composer_height - ImGui::GetStyle().ItemSpacing.y);
+    if ( ImGui::BeginChild("##message-history", ImVec2{0.0F, history_height}, ImGuiChildFlags_None, ImGuiWindowFlags_AlwaysVerticalScrollbar) ) {
+        draw_message_history(*channel);
+    }
+    ImGui::EndChild();
+    draw_composer(*server, *channel, composer_height);
+}
+
+void UI::draw_member_list() {
+
+}
+
+void UI::draw_member_list(const ChannelState* channel) {
+
+}
+
+void UI::draw_header(const ServerState& server, const ChannelState& channel, float height) {
     if ( ImGui::BeginChild("##channel-header", ImVec2{0.0F, height}, ImGuiChildFlags_Borders, ImGuiWindowFlags_NoScrollbar) ) {
-        if ( ImGui::BeginTable("##header-table",2, ImGuiTableFlags_SizingStretchProp) ) {
-            ImGui::TableSetupColumn("Channel", ImGuiTableColumnFlags_WidthStretch);
-            ImGui::TableSetupColumn("Actions", ImGuiTableColumnFlags_WidthFixed, 110.0F);
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("# %.*s", static_cast<int>(channel_name.size()), channel_name.data());
-            ImGui::SameLine();
-            ImGui::TextDisabled("Welcome to the channel");
-            ImGui::TableSetColumnIndex(1);
-            if (ImGui::Button("...")) {
-                m_state.m_show_join_server_window = !m_state.m_show_join_server_window;
-            };
-            ImGui::SameLine();
-            ImGui::Button("Users");
-            ImGui::EndTable();
+        ImGui::AlignTextToFramePadding();
+        ImGui::Text("# %s",channel.m_name.c_str());
+        ImGui::SameLine();
+        if ( !server.m_name.empty() ) {
+            ImGui::TextDisabled("on %s", server.m_name.c_str());
         }
     }
     ImGui::EndChild();
 }
 
-void UI::draw_sidebar() {
-    ImGui::TextColored(ImVec4{1.0F, 0.65F, 0.15F, 1.0F},"MY IRC CLIENT");
-    ImGui::Spacing();
-    ImGui::Separator();
-    ImGui::Spacing();
-    ImGui::TextColored(ImVec4{0.35F, 0.85F, 0.50F, 1.0F},"Freenode");
-
-    for (std::size_t index = 0; index < 1; ++index) {
+void UI::draw_message_history(const ChannelState& channel) {
+    const bool stick_to_bottom = ImGui::GetScrollY() >= ImGui::GetScrollMaxY() - 10.0F;
+    if ( channel.m_messages.empty() ) {
+        ImGui::TextDisabled("No messages yet.");
+        return;
+    }
+    for (std::size_t index = 0; index < channel.m_messages.size(); ++index) {
+        const ChatMessage& message = channel.m_messages[index];
         ImGui::PushID(static_cast<int>(index));
-        //const bool selected = state.m_selected_channel == static_cast<int>(index);
-        //const std::string label = "# " + channels[index].m_name;
-        ImGui::PushStyleColor(ImGuiCol_Header, k_selected_channel_background);
-        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4{0.20F, 0.27F, 0.35F, 1.0F});
-        /*
-        ImGui::PushStyleColor(ImGuiCol_Text, ture ? ImVec4{1, 1, 1, 1} : k_sidebar_text);
-        if ( ImGui::Selectable(label.c_str(), selected, ImGuiSelectableFlags_None, ImVec2{ImGui::GetContentRegionAvail().x, 0.0F}) ) {
-            //state.m_selected_channel = static_cast<int>(index);
-        }
-        */
-        ImGui::PopStyleColor(2);
-        ImGui::PopID();
+        //sender
+        ImGui::TextColored(ImVec4{0.35F, 0.65F, 1.0F, 1.0F}, "%s", message.m_sender.c_str());
+        //Timestamp aligned to right
+        //const std::string timestamp = format_time(message.m_timestamp);
+        //const float timestamp_width = ImGui::CalcTextSize(timestamp.c_str()).x;
+        //ImGui::SameLine();
+        //ImGui::SetCursorPosX( std::max(ImGui::GetCursorPosX(), ImGui::GetWindowContentRegionMax().x - timestamp_width) );
+        //ImGui::TextDisabled("%s", timestamp.c_str());
+        //actual message
+        
     }
-    // Anchor controls near the bottom of the sidebar.
-    const float controls_height = ImGui::GetFrameHeight();
-    if ( ImGui::GetCursorPosY() + controls_height < ImGui::GetWindowHeight() - 20.0F ) {
-        ImGui::SetCursorPosY(ImGui::GetWindowHeight() - controls_height - ImGui::GetStyle().WindowPadding.y);
-    }
-    ImGui::Button("+");
-    ImGui::SameLine();
-    ImGui::Button("Settings");
+}
+
+void UI::draw_composer(const ServerState& server, const ChannelState& channel, float height) {
+
+}
+
+void UI::draw_empty_chat() {
+
+}
+
+const ServerState* UI::selected_server() const {
+    const auto itr = m_irc_view_model.m_servers.find(m_state.m_selected_server_id);
+    return itr == m_irc_view_model.m_servers.end() ? nullptr : &itr->second ;
+}
+
+const ChannelState* UI::selected_channel() const {
+    const ServerState* server = selected_server();
+    if ( !server || m_state.m_selected_channel.empty() ) { return nullptr; }
+    const auto itr = server->m_channels.find(m_state.m_selected_channel);
+    return itr == server->m_channels.end() ? nullptr : &itr->second ;
 }
 
 void UI::draw_pop_up_windows() {
@@ -166,27 +213,27 @@ void UI::draw_join_server_window() {
     ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
     /*  Server Hostname */
     ImGui::SetNextItemWidth(-FLT_MIN);
-    ImGui::InputTextWithHint("##server", "irc.example.net", &m_state.host);
+    ImGui::InputTextWithHint("##server", "irc.example.net", &m_state.m_join_server.m_host);
     ImGui::TextDisabled("Server");
     ImGui::Spacing();
     /*  Port */
     ImGui::SetNextItemWidth(-FLT_MIN);
-    ImGui::InputTextWithHint("##port", "6667", &m_state.port);
+    ImGui::InputTextWithHint("##port", "6667", &m_state.m_join_server.m_port);
     ImGui::TextDisabled("Port");
     ImGui::Spacing();
     /* Nickname */
     ImGui::SetNextItemWidth(-FLT_MIN);
-    ImGui::InputTextWithHint("##nickname", "nickname", &m_state.nickname);
+    ImGui::InputTextWithHint("##nickname", "nickname", &m_state.m_join_server.m_nickname);
     ImGui::TextDisabled("Nickname");
     ImGui::Spacing();
     /* Optional  */
     if (ImGui::CollapsingHeader("Advanced")) {
         ImGui::SetNextItemWidth(-FLT_MIN);
-        ImGui::InputTextWithHint("##username","defaults to nickname", &m_state.username);
+        ImGui::InputTextWithHint("##username","defaults to nickname", &m_state.m_join_server.m_username);
         ImGui::TextDisabled("Username");
         ImGui::Spacing();
         ImGui::SetNextItemWidth(-FLT_MIN);
-        ImGui::InputTextWithHint("##realname", "defaults to nickname", &m_state.realName);
+        ImGui::InputTextWithHint("##realname", "defaults to nickname", &m_state.m_join_server.m_real_name);
         ImGui::TextDisabled("Real name");
     }
 
@@ -200,10 +247,10 @@ void UI::draw_join_server_window() {
     ImGui::SameLine();
     if ( ImGui::Button("Connect", ImVec2{button_width, 0.0F}) ) {
         m_irc_client.connect({
-            .m_host = std::move(m_state.host),
-            .m_port = std::move(m_state.port),
-            .m_nick = std::move(m_state.nickname),
-            .m_username = std::move(m_state.username)
+            .m_host = std::move(m_state.m_join_server.m_host),
+            .m_port = std::move(m_state.m_join_server.m_port),
+            .m_nick = std::move(m_state.m_join_server.m_nickname),
+            .m_username = std::move(m_state.m_join_server.m_username)
         });
     }
     ImGui::End();

@@ -1,37 +1,35 @@
 #pragma once
+#include "uiState.h"
 #include "core/logger.h"
 #include "irc/ircClient.h"
+#include "irc/ircViewModel.h"
 #include <imgui.h>
-#include <string_view>
-
-constexpr ImVec4 k_sidebar_background{0.10F, 0.14F, 0.19F, 1.0F};
-constexpr ImVec4 k_sidebar_text{0.72F, 0.76F, 0.82F, 1.0F};
-constexpr ImVec4 k_selected_channel_background{0.17F, 0.23F, 0.30F, 1.0F};
-
-struct UiState {
-    bool m_show_join_server_window = false;
-
-    //server config state
-    std::string host = "192.168.50.226";
-    std::string port = "6667";
-    std::string nickname;
-    std::string username;
-    std::string realName;
-};
 
 //Should own the view model
 class UI {
 public:
-    explicit UI(IrcClient& client);
+    explicit UI(IrcClient& client, IrcViewModel& view_model);
     //draw view model
     void draw();
 private:
-    void draw_header(std::string_view channel_name, float height);
+    //main layout
     void draw_sidebar();
+    void draw_chat_panel();
+    void draw_member_list();
+    void draw_member_list(const ChannelState* channel);
+    void draw_header(const ServerState& server, const ChannelState& channel, float height);
+    void draw_message_history(const ChannelState& channel);
+    void draw_composer(const ServerState& server, const ChannelState& channel, float height);
+    void draw_empty_chat();
+    //helpers
+    const ServerState* selected_server() const;
+    const ChannelState* selected_channel() const;
+    //pop ups
     void draw_pop_up_windows();
     void draw_join_server_window();
 private:
-    Logger*     m_logger = &Logger::get();
-    IrcClient&  m_irc_client;
-    UiState     m_state;
+    Logger*         m_logger = &Logger::get();
+    IrcClient&      m_irc_client;
+    IrcViewModel&   m_irc_view_model;
+    UiState         m_state;
 };
