@@ -22,6 +22,7 @@ void UI::draw() {
 
     if ( ImGui::Begin("##irc-client-root",nullptr, root_flags) ) {
         ImGui::PopStyleVar(3);
+
         this->draw_pop_up_windows();
 
         constexpr ImGuiTableFlags layout_flags =
@@ -29,10 +30,8 @@ void UI::draw() {
             ImGuiTableFlags_BordersInnerV |
             ImGuiTableFlags_SizingStretchProp;
 
-        const ImVec2 available = ImGui::GetContentRegionAvail();
-
-        //basically our simple ui can be arranged into 3 columns
-        if ( ImGui::BeginTable("##main-layout", 3, layout_flags, available) ) {
+        //root ui layout
+        if (const ImVec2 available = ImGui::GetContentRegionAvail(); ImGui::BeginTable("##main-layout", 3, layout_flags, available) ) {
             //left side bar
             ImGui::TableSetupColumn("Channels", ImGuiTableColumnFlags_WidthFixed,210.0F);
             //center
@@ -50,13 +49,13 @@ void UI::draw() {
             //Chat
             ImGui::TableSetColumnIndex(1);
             if ( ImGui::BeginChild("##chat-workspace", ImVec2{0.0F, 0.0F}, ImGuiChildFlags_None,ImGuiWindowFlags_NoScrollbar) ) {
-                //draw_chat_panel();
+                draw_chat_panel();
             }
             ImGui::EndChild();
             //members
             ImGui::TableSetColumnIndex(2);
             if ( ImGui::BeginChild("##member-sidebar", ImVec2{0.0F, 0.0F}) ) {
-                //draw_member_list(selected_channel());
+                draw_member_list(selected_channel());
             }
             ImGui::EndChild();
             ImGui::EndTable();
@@ -127,7 +126,25 @@ void UI::draw_chat_panel() {
 }
 
 void UI::draw_member_list(const ChannelState* channel) {
-    
+    ImGui::TextUnformatted("Users:");
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+    if ( !channel ) {
+        ImGui::TextDisabled("No channel selected");
+        return;
+    }
+    for (const std::string& user : channel->m_users) {
+        ImGui::PushID(user.c_str());
+        char initial[2] { user.empty() ? '?' : static_cast<char>( std::toupper(static_cast<unsigned char>(user.front())) ), '\0' };
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 16.0F);
+        ImGui::Button(initial, ImVec2{32.0F, 32.0F});
+        ImGui::PopStyleVar();
+        ImGui::SameLine();
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted(user.c_str());
+        ImGui::PopID();
+    }
 }
 
 void UI::draw_header(const ServerState& server, const ChannelState& channel, float height) {
@@ -190,7 +207,16 @@ void UI::draw_composer(const ServerState& server, const ChannelState& channel, f
 }
 
 void UI::draw_empty_chat() {
-
+    const ImVec2 available = ImGui::GetContentRegionAvail();
+    constexpr auto text = "Connect to a server and select a channel.";
+    const ImVec2 text_size = ImGui::CalcTextSize(text);
+    ImGui::SetCursorPos(
+        ImVec2{
+            std::max(0.0F,(available.x - text_size.x) * 0.5F),
+            std::max(0.0F,(available.y - text_size.y) * 0.5F)
+        }
+    );
+    ImGui::TextDisabled("%s", text);
 }
 
 const ServerState* UI::selected_server() const {
