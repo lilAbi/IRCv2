@@ -6,7 +6,6 @@ IrcClient::IrcClient(NetworkService& service, SessionManager& session_manager)
 
 void IrcClient::connect(ServerConfig config) {
     config.m_server_id = ++m_server_id;
-
     m_logger->debug("Host: {}", config.m_host);
     m_logger->debug("Port: {}", config.m_port);
     m_logger->debug("Nick: {}", config.m_nick);
@@ -18,6 +17,7 @@ void IrcClient::connect(ServerConfig config) {
             m_session_manager.connect(std::move(config));
         }
     );
+    /*
     //submit irc registration protocol
     m_network_service.post(
         [this, config = config, logger = Logger::get().get_network_logger()]() mutable {
@@ -37,6 +37,7 @@ void IrcClient::connect(ServerConfig config) {
             }
         }
    );
+   */
 }
 
 void IrcClient::disconnect(int server_id) {

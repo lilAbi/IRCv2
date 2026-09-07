@@ -28,9 +28,7 @@ public:
     void sendMessage(std::string target, std::string message);
 
 private:
-    //
-    void updateSessionAttributes(ServerConfig config);
-    void onResolve();
+    void onResolve(boost::asio::ip::tcp::resolver::results_type endpoints);
     void onConnect();
     //fire off an async read
     void onRead();
@@ -42,6 +40,7 @@ private:
     std::shared_ptr<spdlog::logger> m_logger = Logger::get().get_network_logger();
     boost::asio::ip::tcp::resolver  m_resolver;
     boost::asio::ip::tcp::socket    m_socket;
+    std::unique_ptr<std::array<char, 512>> m_read_buffer = std::make_unique<std::array<char, 512>>();
     std::deque<std::string>         m_write_queue;
     int                             m_server_id = -1;
     std::string                     m_nick;

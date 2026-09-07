@@ -7,30 +7,22 @@ IrcSession::IrcSession(const boost::asio::any_io_executor& io_executor, ThreadSa
 void IrcSession::connect(ServerConfig config) {
     //update state to Resolving
     m_state = SessionState::Resolving;
-    m_logger->info("Attempting to resolve an endpoint to host: {}", config.m_host);
-    //resolve the host and get a list of endpoints
-    const auto endpoints = m_resolver.resolve(config.m_host, config.m_port);
-    if ( !endpoints.empty() ) {
-        //use the first endpoint
-        const auto endpoint = endpoints.begin()->endpoint();
-        m_logger->info("Found and using endpoint: {}", endpoint.address().to_string());
-        //update state to Connecting
-        m_state = SessionState::Connecting;
-        //attempt to connect to the endpoint
-        m_socket.async_connect(
-            endpoint,
-            [this, config = std::move(config), current_session = this->shared_from_this()] (const boost::system::error_code& error) {
-                if (!error) {
-                    m_logger->info("Connection Established 🟢");
-                    current_session->updateSessionAttributes(config);
-                    current_session->onRead();
-                } else {
-                    m_logger->error("[IrcSession::connect] {}", error.message());
-                    current_session->m_state = SessionState::Disconnected;
-                }
+    m_server_id = config.m_server_id;
+    m_nick      = config.m_nick;
+    m_username  = config.m_username;
+    m_real_name = config.m_nick;
+    m_resolver.async_resolve(
+        config.m_host,
+        config.m_port,
+        [this, current_session = shared_from_this()] (const boost::system::error_code& error, boost::asio::ip::tcp::resolver::results_type results) {
+            if (error) {
+                m_logger->error("Could not resolve endpoint: {}", error.message());
+                return;
             }
-        ); //end of async_connect
-    }
+            current_session->onResolve(std::move(results));
+        }
+    );
+
 }
 
 void IrcSession::disconnect() {
@@ -53,42 +45,30 @@ void IrcSession::sendMessage(std::string target, std::string message) {
 
 }
 
-void IrcSession::updateSessionAttributes(ServerConfig config) {
-    m_state     = SessionState::Connected;
-    m_server_id = config.m_server_id;
-    m_nick      = std::move(config.m_nick);
-    m_username  = std::move(config.m_username);
-    m_real_name = std::move(config.m_nick);
-}
-
-void IrcSession::onResolve() {
-
+void IrcSession::onResolve(boost::asio::ip::tcp::resolver::results_type endpoints) {
+    m_state = SessionState::Connecting;
+    boost::asio::async_connect(m_socket, endpoints,
+        [this, current_session = shared_from_this()] (const boost::system::error_code& error, const boost::asio::ip::tcp::endpoint& endpoint) {
+            if (error) {
+                m_logger->error("Could not connect: {}", error.message());
+                return;
+            }
+            m_logger->info("IRC session connected to {}", endpoint.address().to_string());
+            current_session->onConnect();
+        }
+    );
 }
 
 void IrcSession::onConnect() {
-
+    m_state = SessionState::Registering;
+    startRead();
+    //sendRaw("NICK " + m_nick + "\r\n");
+    //sendRaw("USER " + m_username + " 0 * :" + m_real_name + "\r\n");
 }
 
 void IrcSession::onRead() {
-    //todo: find a better way to ready
-    //create a char buffer on the heap
-    auto buffer = std::make_shared<std::array<char, 1024>>();
-    buffer->fill('\0');
-    //read from the socket into buffer
-    m_socket.async_read_some(
-        boost::asio::buffer(buffer->data(), buffer->size()),
-        [this, buffer = buffer, current_session = this->shared_from_this()] (const boost::system::error_code& error, std::size_t bytes_transferred) {
-            if (!error) {
-                m_logger->info("Response:\n{}", buffer->data());
-                //kick off another read from the socket
-                current_session->onRead();
-            } else {
-                m_logger->error("[IrcSession::onRead]: {}", error.message());
-                //todo: clean up
-                current_session->disconnect();
-            }
-        }
-    ); //end of async_read_some
+    m_logger->info("Response:\n{}", m_read_buffer->data());
+    this->startRead();
 }
 
 void IrcSession::onWrite(std::size_t length, const boost::system::error_code &ec) {
@@ -96,7 +76,19 @@ void IrcSession::onWrite(std::size_t length, const boost::system::error_code &ec
 }
 
 void IrcSession::startRead() {
-
+    //clear buffer
+    m_read_buffer->fill('\0');
+    m_socket.async_read_some(
+        boost::asio::buffer(m_read_buffer->data(), m_read_buffer->max_size()),
+        [this, current_session = this->shared_from_this()] (const boost::system::error_code& error, std::size_t bytes_transferred) {
+            if (error) {
+                m_logger->error("Read Error: {}", error.message());
+                current_session->disconnect();
+                return;
+            }
+            current_session->onRead();
+        }
+    );
 }
 
 void IrcSession::startWrite() {
