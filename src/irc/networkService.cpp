@@ -20,8 +20,8 @@ void NetworkService::init() {
 
 void NetworkService::stop() {
     m_logger->info("Shutting down Network Service...");
-    m_io_thread.request_stop();
     m_io_context.stop();
+    m_io_thread.request_stop();
     m_io_thread.join();
     m_logger->info("Network Service background thread joined");
 }

@@ -22,7 +22,7 @@ void IrcSession::connect(ServerConfig config) {
             [this, config = std::move(config), current_session = this->shared_from_this()] (const boost::system::error_code& error) {
                 if (!error) {
                     m_logger->info("Connection Established 🟢");
-                    current_session->updateServerConfig(config);
+                    current_session->updateSessionAttributes(config);
                     current_session->onRead();
                 } else {
                     m_logger->error("[IrcSession::connect] {}", error.message());
@@ -53,7 +53,7 @@ void IrcSession::sendMessage(std::string target, std::string message) {
 
 }
 
-void IrcSession::updateServerConfig(ServerConfig config) {
+void IrcSession::updateSessionAttributes(ServerConfig config) {
     m_state     = SessionState::Connected;
     m_server_id = config.m_server_id;
     m_nick      = std::move(config.m_nick);

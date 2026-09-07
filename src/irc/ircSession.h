@@ -14,9 +14,10 @@
  *  Manages connection state, and implements the IRC protocol (sending NICK/USER, parsing incoming lines, handling PING, etc.).
  */
 class SessionManager;
-
+class IrcClient;
 class IrcSession : public std::enable_shared_from_this<IrcSession> {
     friend SessionManager;
+    friend IrcClient;
 public:
     IrcSession(const boost::asio::any_io_executor& io_executor, ThreadSafeQueue<NetworkEventVariant>& network_event_queue);
 
@@ -28,7 +29,7 @@ public:
 
 private:
     //
-    void updateServerConfig(ServerConfig config);
+    void updateSessionAttributes(ServerConfig config);
     void onResolve();
     void onConnect();
     //fire off an async read
@@ -41,11 +42,10 @@ private:
     std::shared_ptr<spdlog::logger> m_logger = Logger::get().get_network_logger();
     boost::asio::ip::tcp::resolver  m_resolver;
     boost::asio::ip::tcp::socket    m_socket;
-    boost::asio::streambuf          m_read_buffer;
     std::deque<std::string>         m_write_queue;
-    int                             m_server_id{};
+    int                             m_server_id = -1;
     std::string                     m_nick;
     std::string                     m_username;
     std::string                     m_real_name;
-    SessionState                    m_state{};
+    SessionState                    m_state = SessionState::Default;
 };
