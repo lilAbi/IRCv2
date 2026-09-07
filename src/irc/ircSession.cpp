@@ -62,8 +62,10 @@ void IrcSession::onResolve(boost::asio::ip::tcp::resolver::results_type endpoint
 void IrcSession::onConnect() {
     m_state = SessionState::Registering;
     startRead();
-    //sendRaw("NICK " + m_nick + "\r\n");
-    //sendRaw("USER " + m_username + " 0 * :" + m_real_name + "\r\n");
+    sendRaw("CAP LS 302\r\n");
+    sendRaw("CAP END\r\n");
+    sendRaw("NICK " + m_nick + "\r\n");
+    sendRaw("USER " + m_username + " 0 * :" + m_real_name + "\r\n");
 }
 
 void IrcSession::onRead() {
@@ -73,6 +75,15 @@ void IrcSession::onRead() {
 
 void IrcSession::onWrite(std::size_t length, const boost::system::error_code &ec) {
 
+}
+
+void IrcSession::sendRaw(std::string message) {
+    //if queue is empty then there is work in progress
+    const auto write_in_progress = !m_write_queue.empty();
+    m_write_queue.push_back(std::move(message));
+    if (!write_in_progress) {
+        startWrite();
+    }
 }
 
 void IrcSession::startRead() {
@@ -92,5 +103,20 @@ void IrcSession::startRead() {
 }
 
 void IrcSession::startWrite() {
-
+    if (m_write_queue.empty()) {
+        return;
+    }
+    m_socket.async_write_some(
+        boost::asio::buffer(m_write_queue.front()),
+        [this, current_session = this->shared_from_this()] (const boost::system::error_code& error, std::size_t bytes_transferred) {
+            if (error) {
+                m_logger->error("Write Error: {}", error.message());
+                return;
+            }
+            current_session->m_write_queue.pop_front();
+            if (!current_session->m_write_queue.empty()) {
+                current_session->startWrite();
+            }
+        }
+    );
 }

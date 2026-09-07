@@ -290,10 +290,10 @@ void UI::draw_join_server_window() {
     ImGui::SameLine();
     if ( ImGui::Button("Connect", ImVec2{button_width, 0.0F}) ) {
         m_irc_client.connect({
-            .m_host = std::move(m_state.m_join_server.m_host),
-            .m_port = std::move(m_state.m_join_server.m_port),
-            .m_nick = std::move(m_state.m_join_server.m_nickname),
-            .m_username = std::move(m_state.m_join_server.m_username)
+            .m_host = m_state.m_join_server.m_host,
+            .m_port = m_state.m_join_server.m_port,
+            .m_nick = m_state.m_join_server.m_nickname,
+            .m_username = m_state.m_join_server.m_username
         });
     }
     ImGui::End();

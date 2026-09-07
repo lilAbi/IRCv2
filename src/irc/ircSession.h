@@ -28,11 +28,14 @@ public:
     void sendMessage(std::string target, std::string message);
 
 private:
+    //Start async connection
     void onResolve(boost::asio::ip::tcp::resolver::results_type endpoints);
+    //Start reads and IRC client registration to server
     void onConnect();
     //fire off an async read
     void onRead();
     void onWrite(std::size_t length, const boost::system::error_code& ec);
+    void sendRaw(std::string message);
     void startRead();
     void startWrite();
 private:
