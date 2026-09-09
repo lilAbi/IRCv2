@@ -21,7 +21,7 @@ class IrcSession : public std::enable_shared_from_this<IrcSession> {
 public:
     IrcSession(const boost::asio::any_io_executor& io_executor, ThreadSafeQueue<NetworkEventVariant>& network_event_queue);
 
-    void connect(ServerConfig config);
+    void connect(const ServerConfig& config);
     void disconnect();
     void join(std::string channel);
     void leave(std::string channel);
@@ -33,8 +33,8 @@ private:
     //Start reads and IRC client registration to server
     void onConnect();
     //fire off an async read
-    void onRead();
-    void onWrite(std::size_t length, const boost::system::error_code& ec);
+    void onRead(std::size_t bytes_transferred);
+    void onWrite();
     void sendRaw(std::string message);
     void startRead();
     void startWrite();

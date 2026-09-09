@@ -4,7 +4,7 @@ IrcSession::IrcSession(const boost::asio::any_io_executor& io_executor, ThreadSa
     : m_resolver(io_executor), m_socket(io_executor), m_network_event_queue(network_event_queue) {
 }
 
-void IrcSession::connect(ServerConfig config) {
+void IrcSession::connect(const ServerConfig& config) {
     //update state to Resolving
     m_state = SessionState::Resolving;
     m_server_id = config.m_server_id;
@@ -68,13 +68,18 @@ void IrcSession::onConnect() {
     sendRaw("USER " + m_username + " 0 * :" + m_real_name + "\r\n");
 }
 
-void IrcSession::onRead() {
-    m_logger->info("Response:\n{}", m_read_buffer);
+void IrcSession::onRead(const std::size_t bytes_transferred) {
+    std::string message{m_read_buffer.data(), bytes_transferred};
+    m_logger->info("IRC Message:\n{}", message);
+    m_read_buffer.erase(0, bytes_transferred);
     this->startRead();
 }
 
-void IrcSession::onWrite(std::size_t length, const boost::system::error_code &ec) {
-
+void IrcSession::onWrite() {
+    m_write_queue.pop_front();
+    if (!m_write_queue.empty()) {
+        this->startWrite();
+    }
 }
 
 void IrcSession::sendRaw(std::string message) {
@@ -87,8 +92,6 @@ void IrcSession::sendRaw(std::string message) {
 }
 
 void IrcSession::startRead() {
-    //clear buffer
-    m_read_buffer.clear();
     boost::asio::async_read_until(
         m_socket,
         boost::asio::dynamic_buffer(m_read_buffer, m_max_read_buffer),
@@ -99,7 +102,7 @@ void IrcSession::startRead() {
                 current_session->disconnect();
                 return;
             }
-            current_session->onRead();
+            current_session->onRead(bytes_transferred);
         }
     );
 }
@@ -113,10 +116,7 @@ void IrcSession::startWrite() {
                 m_logger->error("Write Error: {}", error.message());
                 return;
             }
-            current_session->m_write_queue.pop_front();
-            if (!current_session->m_write_queue.empty()) {
-                current_session->startWrite();
-            }
+            current_session->onWrite();
         }
     );
 }
