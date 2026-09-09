@@ -3,6 +3,7 @@
 #include <chrono>
 #include <string>
 #include <variant>
+#include <unordered_map>
 
 //server config provided by the UI
 struct ServerConfig {
@@ -52,4 +53,11 @@ enum class SessionState {
     Connected,
     Disconnecting,
     Disconnected
+};
+
+struct IrcMessage {
+    std::unordered_map<std::string, std::string> m_tags;
+    std::optional<std::string>  m_source;
+    std::string                 m_command;
+    std::vector<std::string>    m_parameters;
 };

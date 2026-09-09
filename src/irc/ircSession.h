@@ -43,7 +43,8 @@ private:
     std::shared_ptr<spdlog::logger> m_logger = Logger::get().get_network_logger();
     boost::asio::ip::tcp::resolver  m_resolver;
     boost::asio::ip::tcp::socket    m_socket;
-    std::unique_ptr<std::array<char, 512>> m_read_buffer = std::make_unique<std::array<char, 512>>();
+    static constexpr std::size_t    m_max_read_buffer = 512;
+    std::string                     m_read_buffer{};
     std::deque<std::string>         m_write_queue;
     int                             m_server_id = -1;
     std::string                     m_nick;

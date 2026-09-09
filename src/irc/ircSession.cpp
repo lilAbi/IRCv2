@@ -69,7 +69,7 @@ void IrcSession::onConnect() {
 }
 
 void IrcSession::onRead() {
-    m_logger->info("Response:\n{}", m_read_buffer->data());
+    m_logger->info("Response:\n{}", m_read_buffer);
     this->startRead();
 }
 
@@ -88,9 +88,11 @@ void IrcSession::sendRaw(std::string message) {
 
 void IrcSession::startRead() {
     //clear buffer
-    m_read_buffer->fill('\0');
-    m_socket.async_read_some(
-        boost::asio::buffer(m_read_buffer->data(), m_read_buffer->max_size()),
+    m_read_buffer.clear();
+    boost::asio::async_read_until(
+        m_socket,
+        boost::asio::dynamic_buffer(m_read_buffer, m_max_read_buffer),
+        "\r\n",
         [this, current_session = this->shared_from_this()] (const boost::system::error_code& error, std::size_t bytes_transferred) {
             if (error) {
                 m_logger->error("Read Error: {}", error.message());
@@ -103,9 +105,7 @@ void IrcSession::startRead() {
 }
 
 void IrcSession::startWrite() {
-    if (m_write_queue.empty()) {
-        return;
-    }
+    if (m_write_queue.empty()) return;
     m_socket.async_write_some(
         boost::asio::buffer(m_write_queue.front()),
         [this, current_session = this->shared_from_this()] (const boost::system::error_code& error, std::size_t bytes_transferred) {
