@@ -1,7 +1,7 @@
 #include "ircSession.h"
 
 IrcSession::IrcSession(const boost::asio::any_io_executor& io_executor, ThreadSafeQueue<NetworkEventVariant> &network_event_queue)
-    : m_resolver(io_executor), m_socket(io_executor), m_network_event_queue(network_event_queue) {
+    : m_resolver(io_executor), m_socket(io_executor), m_irc_message_handler(network_event_queue) {
 }
 
 void IrcSession::connect(const ServerConfig& config) {
@@ -70,8 +70,9 @@ void IrcSession::onConnect() {
 
 void IrcSession::onRead(const std::size_t bytes_transferred) {
     std::string message{m_read_buffer.data(), bytes_transferred};
-    m_logger->info("IRC Message:\n{}", message);
     m_read_buffer.erase(0, bytes_transferred);
+    m_logger->info("Raw Incoming Message:\n{}", message);
+    //IrcParser::parseIrc(message);
     this->startRead();
 }
 
@@ -94,7 +95,7 @@ void IrcSession::sendRaw(std::string message) {
 void IrcSession::startRead() {
     boost::asio::async_read_until(
         m_socket,
-        boost::asio::dynamic_buffer(m_read_buffer, m_max_read_buffer),
+        boost::asio::dynamic_buffer(m_read_buffer, kMaxReadBuffer),
         "\r\n",
         [this, current_session = this->shared_from_this()] (const boost::system::error_code& error, std::size_t bytes_transferred) {
             if (error) {
